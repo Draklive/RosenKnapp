@@ -5,7 +5,12 @@ SendMode Input
 SetWorkingDir %A_ScriptDir%
 #Singleinstance, Force
 
-;Paramaters
+Gosub, SetParamaters
+Gosub, ShowSplashscreen
+Gosub, CreateMenu
+Return
+
+SetParamaters:
 QuoteList = %A_ScriptDir%\Resources\Quotes.txt
 Button1 = %A_ScriptDir%\Resources\Button.tiff
 Decal = %A_ScriptDir%\Resources\Decal.tiff
@@ -13,10 +18,11 @@ Pointer = %A_ScriptDir%\Resources\Arrows.tiff
 Block = %A_ScriptDir%\Resources\Block.tiff
 Schemafil = %A_ScriptDir%\Resources\Schema.png
 Tick = *16
-Blocknumber = 2
+Blocknumber = 5
 Preferences = %A_ScriptDir%\Resources\Preferences.txt
+Return
 
-
+ShowSplashscreen:
 Gui, Splashscreen:New
 Gui, Splashscreen:Color, EEAA99
 Gui, Splashscreen:+LastFound +ToolWindow
@@ -32,6 +38,9 @@ Gui Splashscreen:-Caption
 Gui, Splashscreen:Show,,Splashscreen
 SetTimer, NewQuote,300
 SetTimer, Update, 10
+Return
+
+CreateMenu:
 line := GetRandomLine(QuoteList)
 FileReadLine, Quote, %QuoteList%, %line%
 Gui, Menu1:New
@@ -46,7 +55,6 @@ isquote := 0
 Gui, Menu1:Font, s20,, Verdana
 Gosub, AddBlock
 Gui Menu1:-Caption
-
 Gui, Arrowg:New
 Gui, Arrowg:Color, EEAA99
 Gui, Arrowg:+LastFound +ToolWindow
@@ -54,7 +62,6 @@ WinSet, TransColor, EEAA99
 Gui, Arrowg:Add, Picture, x0 y0 HwndOnlyArrow +BackgroundTrans, %Pointer%
 Gui Arrowg:-Caption
 Gui, Arrowg:+OwnerMenu1
-
 SysGet, Mon1 , MonitorWorkArea, 1
 TranslationY := ((Mon1Bottom/2) - ((162 + ((Blocknumber-1) * 55))/2))
 If (TranslationY < 0)
