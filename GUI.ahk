@@ -43,7 +43,7 @@ Return
 CreateMenu:
 line := GetRandomLine(QuoteList)
 FileReadLine, Quote, %QuoteList%, %line%
-Gui, Menu1:New
+Gui, Menu1:New,+HwndMenuguiisbest
 Gui, Menu1:Color, EEAA99
 Gui Menu1:+LastFound
 WinSet, TransColor, EEAA99
@@ -68,7 +68,7 @@ If (TranslationY < 0)
 TranslationY := 0
 TranslationX := ((Mon1Right/2) - (475/2))
 GuiControl, Menu1:, Option1, Schema
-GuiControl, Menu1:, Option%Blocknumber%, Options
+GuiControl, Menu1:, Option2, Auto Shutdown
 StringRight, Week, A_YWeek, 2
 Return
 
@@ -105,7 +105,7 @@ Option1:
 Gosub, VisaSchema
 Return
 Option2:
-Msgbox, 0, Option2, You clicked the options, 1
+Gosub, AutoShutdown
 Return
 Option3:
 Return
@@ -336,3 +336,171 @@ crop(Schemafil, x, y, r, b)
 	img.SaveFile(Schemafil)
 	return
 }
+
+AutoShutdown:
+Gui, Shut:new
+Gui, Shut:Font, s11,, Verdana
+Gui, Shut:Add, Text, w70 Right x5 y14, Action:
+Gui, Shut:Add, DropDownList, Choose5 y10 x80 vAction, Shutdown|Hibernate|Sleep|Restart|Do nothing
+Iteration32 := 5
+Loopiteration := -1
+Loop, 4
+{
+Iteration32 += -1
+Loopiteration += 1
+Position := Loopiteration * 40 + 50
+Textpos := Position + 4
+If (Iteration32 = 1)
+{
+TimeUnit = Seconds
+RangeInterval := 59
+}
+
+Else If (Iteration32 = 2)
+{
+TimeUnit = Minutes
+RangeInterval := 59
+}
+
+Else If (Iteration32 = 3)
+{
+TimeUnit = Hours
+RangeInterval := 23
+}
+
+Else If (Iteration32 = 4)
+{
+TimeUnit = Days
+RangeInterval := 42
+}
+Gui, Shut:Font, s11,, Verdana
+Gui, Shut:Add, Text, w70 Right x5 y%Textpos%, %TimeUnit%:
+Gui, Shut:Add, Edit, x50 limit2 Number vVisualValue%TimeUnit% gCheckvalue%TimeUnit% x80 y%Position%
+Gui, Shut:Add, UpDown, vUpDownArrows%TimeUnit% gUpdateSlider%TimeUnit% Range0-%RangeInterval%, 0
+Gui, Shut:Font, s20,, Verdana
+Gui, Shut:Add, Slider, AltSubmit Center -TabStop NoTicks gUpdateText%TimeUnit% x250 y%Position% vSlider%TimeUnit% Range0-%RangeInterval%, 0
+}
+Gui, Shut:Font, s11,, Verdana
+Gui, Shut:Add, Button, -TabStop Default gSavethevaluesAndsettimer x410 y205, Set Timer
+Gui, Shut:Add, Button, gGuiClose -TabStop x490 y205, Cancel
+Gui, Shut:Show,, AutoShutdown
+Return
+
+GuiClose:
+Gui, Shut:Destroy
+Return
+
+SavethevaluesAndsettimer:
+Gui, Shut:Submit
+Seconds := VisualValueSeconds
+Minutes := VisualValueMinutes
+Hours := VisualValueHours
+Days := VisualValueDays
+Milliseconds := (((((((Days * 24) + Hours) * 60) + Minutes) * 60) + Seconds) * 1000)
+SetTimer, PerformAction, %Milliseconds%
+Return
+
+PerformAction:
+SetTimer, PerformAction, OFF
+If (Action = "Shutdown")
+{
+Shutdown, 1
+Exitapp
+}
+Else If (Action = "Hibernate")
+{
+DllCall("PowrProf\SetSuspendState", "int", 1, "int", 0, "int", 0)
+Exitapp
+}
+Else If (Action = "Sleep")
+{
+DllCall("PowrProf\SetSuspendState", "int", 0, "int", 0, "int", 0)
+Exitapp
+}
+Else If (Action = "Restart")
+{
+Shutdown, 2
+Exitapp
+}
+Else If (Action = "Do nothing")
+{
+MsgBox, 0, Nothing, No action has been taken
+}
+Return
+
+UpdateSliderSeconds:
+Guicontrol,Shut:, SliderSeconds , %UpDownArrowsSeconds%
+Return
+
+UpdateTextSeconds:
+Guicontrol,Shut:, VisualValueSeconds , %SliderSeconds%
+Return
+
+CheckvalueSeconds:
+GuiControlGet, TextValueSeconds ,Shut:, VisualValueSeconds
+If (TextValueSeconds > 59)
+{
+Guicontrol,Shut:, VisualValueSeconds , 59
+Guicontrol,Shut:, SliderSeconds , 59
+}
+Else
+Guicontrol,Shut:, SliderSeconds , %TextValueSeconds%
+Return
+
+
+UpdateSliderMinutes:
+Guicontrol,Shut:, SliderMinutes , %UpDownArrowsMinutes%
+Return
+
+UpdateTextMinutes:
+Guicontrol,Shut:, VisualValueMinutes , %SliderMinutes%
+Return
+
+CheckvalueMinutes:
+GuiControlGet, TextValueMinutes ,Shut:, VisualValueMinutes
+If (TextValueMinutes > 59)
+{
+Guicontrol,Shut:, VisualValueMinutes , 59
+Guicontrol,Shut:, SliderMinutes , 59
+}
+Else
+Guicontrol,Shut:, SliderMinutes , %TextValueMinutes%
+Return
+
+UpdateSliderHours:
+Guicontrol,Shut:, SliderHours , %UpDownArrowsHours%
+Return
+
+UpdateTextHours:
+Guicontrol,Shut:, VisualValueHours , %SliderHours%
+Return
+
+CheckvalueHours:
+GuiControlGet, TextValueHours ,Shut:, VisualValueHours
+If (TextValueHours > 23)
+{
+Guicontrol,Shut:, VisualValueHours , 23
+Guicontrol,Shut:, SliderHours , 23
+}
+Else
+Guicontrol,Shut:, SliderHours , %TextValueHours%
+Return
+
+UpdateSliderDays:
+Guicontrol,Shut:, SliderDays , %UpDownArrowsDays%
+Return
+
+UpdateTextDays:
+Guicontrol,Shut:, VisualValueDays , %SliderDays%
+Return
+
+CheckvalueDays:
+GuiControlGet, TextValueDays ,Shut:, VisualValueDays
+If (TextValueDays > 42)
+{
+Guicontrol,Shut:, VisualValueDays , 42
+Guicontrol,Shut:, SliderDays , 42
+}
+Else
+Guicontrol,Shut:, SliderDays , %TextValueDays%
+Return
