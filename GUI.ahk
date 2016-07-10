@@ -1,6 +1,6 @@
 ﻿#NoEnv
 #Warn
-#NoTrayIcon
+#Persistent
 SendMode Input
 SetWorkingDir %A_ScriptDir%
 #Singleinstance, Force
@@ -18,7 +18,7 @@ Pointer = %A_ScriptDir%\Resources\Arrows.tiff
 Block = %A_ScriptDir%\Resources\Block.tiff
 Schemafil = %A_ScriptDir%\Resources\Schema.png
 Tick = *16
-Blocknumber = 5
+Blocknumber = 12
 Preferences = %A_ScriptDir%\Resources\Preferences.txt
 Return
 
@@ -55,6 +55,8 @@ isquote := 0
 Gui, Menu1:Font, s20,, Verdana
 Gosub, AddBlock
 Gui Menu1:-Caption
+
+
 Gui, Arrowg:New
 Gui, Arrowg:Color, EEAA99
 Gui, Arrowg:+LastFound +ToolWindow
@@ -91,8 +93,12 @@ Gui, Arrowg:Hide
 }
 Else
 {
+Arrowpos := 0
+isnotreal := 0
+MosxOld := 0
+MosyOld := 0 ;kanske ska flytta upp dessa så att de inte återställs när man öppnar menyn.
 SetTimer, UpdateMouse, 10
-Gui, Arrowg:Show,,RosenPil
+;Gui, Arrowg:Show,,RosenPil
 Gui, Menu1:Show,,RosenKnapp
 }
 Return
@@ -108,6 +114,7 @@ Option2:
 Gosub, AutoShutdown
 Return
 Option3:
+MsgBox, 0, Födelsedag, Grattis Mamma!
 Return
 Option4:
 Return
@@ -181,24 +188,92 @@ Gui, Menu1:Add, Text, x0 y%posytext% w475 Center cBlack +BackgroundTrans HwndZor
 }
 Return
 
+Enter::
+IfWinActive, RosenKnapp
+{
+If (mousemoved = 0)
+Gosub, Option%Arrowpos%
+Return
+}
+Else
+Send, {Enter}
+
+Up::
+IfWinActive, RosenKnapp
+{
+If (Arrowpos = 0)
+Arrowpos := 1
+Else
+{
+If (Arrowpos > 1)
+{
+Arrowpos += (-1)
+}
+Else
+Arrowpos := Blocknumber
+}
+zorropos := (TranslationY + 91 + (Arrowpos) * 55)
+Gui, Arrowg:Show, NoActivate x%TranslationX% y%zorropos%,RosenPil
+Return
+}
+Else
+Send, {Up}
+Return
+
+Down::
+IfWinActive, RosenKnapp
+{
+If (Arrowpos = 0)
+Arrowpos := 1
+Else
+{
+If (Arrowpos < Blocknumber)
+{
+Arrowpos += (+1)
+}
+Else
+Arrowpos := 1
+}
+zorropos := (TranslationY + 91 + (Arrowpos) * 55)
+Gui, Arrowg:Show, NoActivate x%TranslationX% y%zorropos%,RosenPil
+Return
+}
+Else
+Send, {Down}
+Return
+
 UpdateMouse:
+CoordMode, Mouse
+MouseGetPos, Mosx, Mosy,,id, 2
+mousemoved := 0
+If (MosxOld <> Mosx)
+{
+mousemoved := 1
+MosxOld := Mosx
+}
+If (MosyOld <> Mosy)
+{
+mousemoved := 1
+MosyOld := Mosy
+}
+
+If (mousemoved = 1)
+{
 IfWinExist, RosenKnapp
 {
 WinGetPos, MainX, MainY,,, RosenKnapp
 TranslationY := MainY
 TranslationX := MainX
 }
-CoordMode, Mouse
-MouseGetPos, Mosx, Mosy,,id, 2
 Mosy += (-TranslationY)
-Windy :=Mosy-27
+Windy := Mosy-27
 If (Windy < 129)
 Windy := 129
 Bottom := (162 + ((Blocknumber-1) * 55))
 If (Windy > Bottom)
 Windy := Bottom
 Windy += TranslationY
-Cursorx := ((Mon1Right/2)-Mosx)
+Cursorx := ((TranslationX+475/2)-Mosx)
 If (Cursorx > 0)
 {
 If (Cursorx > 150)
@@ -209,20 +284,53 @@ Else
 If (Cursorx < (-150))
 Cursorx := (-150)
 }
-Windx := (Translationx - (Cursorx/15))
-Gui, Arrowg:Show, NoActivate x%Windx% y%Windy%,RosenPil
-
+Windx := (TranslationX - (Cursorx)/15)
+thisisreal := 0
 If (id = OnlyArrow)
-Return
+thisisreal := 1
+Else
+{
+supersork := 0
+Loop, %Blocknumber% 
+{
+supersork += 1
+If (id = Zorro1%supersork%)
+{
+thisisreal := 1
+Break
+}
+If (id = Zorro2%supersork%)
+{
+thisisreal := 1
+Break
+}
+}
+}
+If (thisisreal = 1 and isnotreal < 12)
+{
+Gui, Arrowg:Show, NoActivate x%Windx% y%Windy%,RosenPil
+}
+Else
+{
+If (isnotreal > 12)
+{
+Gui, Arrowg:Hide
+isnotreal := 0
+}
+isnotreal += 1
+}
+
+
 If (((id = topMenu1) or (id = topMenu2)) and (isquote = 1))
 {
-	GuiControl, Menu1:, QuoteText, CTRL + SHIFT Q to close
+	GuiControl, Menu1:, QuoteText, CTRL + SHIFT + Q to close
 	isquote := 0
 }
 If (id <> topMenu1) and (id <> topMenu2) and (isquote <> 1)
 {
 	GuiControl, Menu1:, QuoteText, % Quote
 	isquote := 1
+}
 }
 Return
 
@@ -410,12 +518,10 @@ Exitapp
 Else If (Action = "Hibernate")
 {
 DllCall("PowrProf\SetSuspendState", "int", 1, "int", 0, "int", 0)
-Exitapp
 }
 Else If (Action = "Sleep")
 {
 DllCall("PowrProf\SetSuspendState", "int", 0, "int", 0, "int", 0)
-Exitapp
 }
 Else If (Action = "Restart")
 {
